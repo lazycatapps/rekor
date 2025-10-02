@@ -27,3 +27,6 @@ signature
 rekor.pub
 *~
 *.test
+
+*.lpk
+.lzc-dtl-cache.json

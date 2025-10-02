@@ -1,0 +1,171 @@
+# app 的唯一 id,上架到商店需要保证不要冲突,尽量使用开发者自己的域名作为后缀.
+package: cloud.lazycat.app.liu.rekor
+# app 的版本
+version: 1.4.2
+
+name: Rekor
+keyword: rekor, sigstore, transparency, log
+description: Sigstore's signature transparency log
+
+# 软件名称,会显示在启动器之类的地方
+locales:
+  zh:
+    name: Rekor 透明日志
+    description: |
+      ## Rekor - Sigstore 签名透明日志
+
+      Rekor 官方网站：https://github.com/sigstore/rekor
+
+      Rekor 是 Sigstore 项目的签名透明日志服务，它提供了一个不可变的、防篡改的分类账本，用于记录软件签名和其他元数据。Rekor 使得软件供应链更加透明和可验证。
+
+      本应用提供了完整的 Rekor 服务环境，包括 Trillian 日志服务器、签名服务和搜索索引，支持软件签名的记录、查询和验证。
+
+      ## 主要功能
+
+      - 📝 记录和验证软件签名
+      - 🔒 基于 Trillian 的不可变透明日志
+      - 🔍 支持多种类型的签名和证明
+      - 🔗 与 Sigstore 生态系统集成
+      - 📊 提供 RESTful API 接口
+      - 🔐 支持各种加密签名格式
+
+      ## 使用方法
+
+      1. 启动应用后，Rekor 服务会自动初始化并运行
+      2. 通过 RESTful API 接口提交签名记录
+      3. 使用 Rekor CLI 或 API 查询和验证签名
+      4. 与其他 Sigstore 工具（如 Cosign、Fulcio）集成使用
+
+      更多用法详见：https://github.com/lazycatapps/rekor/blob/lazycat-main/USAGE_GUIDE.md
+
+  en:
+    name: Rekor
+    description: |
+      ## Rekor - Sigstore's Signature Transparency Log
+
+      Rekor official website: https://github.com/sigstore/rekor
+
+      Rekor is Sigstore's signature transparency log service, providing an immutable, tamper-resistant ledger for recording software signatures and other metadata. Rekor makes the software supply chain more transparent and verifiable.
+
+      This application provides a complete Rekor service environment, including Trillian log server, signing service, and search index, supporting the recording, querying, and verification of software signatures.
+
+      ## Main Features
+
+      - 📝 Record and verify software signatures
+      - 🔒 Immutable transparency log based on Trillian
+      - 🔍 Support for multiple types of signatures and attestations
+      - 🔗 Integration with Sigstore ecosystem
+      - 📊 Provides RESTful API interface
+      - 🔐 Support for various cryptographic signature formats
+
+      ## Usage Instructions
+
+      1. After starting the application, Rekor service will automatically initialize and run
+      2. Submit signature records through RESTful API interface
+      3. Query and verify signatures using Rekor CLI or API
+      4. Integrate with other Sigstore tools (such as Cosign, Fulcio)
+
+      For more usage details, see: https://github.com/lazycatapps/rekor/blob/lazycat-main/USAGE_GUIDE.md
+
+# 软件本身的 license
+license: https://github.com/sigstore/rekor?tab=Apache-2.0-1-ov-file
+
+# 软件的主页,会在商店等地方体现
+homepage: https://github.com/sigstore/rekor
+
+# lpk 的作者,会在商店等地方体现
+author: liu
+
+# application 作为一个特殊的 container 运行，对应的 service 名称为固定的`app`， 其他 service 可以通过此名称与 app 进行通讯
+application:
+  # 是否存在后台任务， 若存在则系统不会对此 app 进行主动休眠等操作
+  background_task: true
+
+  # 期望的 app 域名，如果系统中已经有对应域名则会提示用户选择其他域名。 最终 app 分配到的域名以/lzcapp/run/app.subdomain 为准
+  subdomain: rekor
+
+  # 公开访问路径
+  public_path:
+    - /
+
+  routes:
+    - /=http://rekor-server.cloud.lazycat.app.liu.rekor.lzcapp:3000/
+
+  # 是否启用多实例
+  multi_instance: false
+
+services:
+  mysql:
+    image: registry.lazycat.cloud/liu/trillian-opensource-ci/db_server:9a8a4d8f75b4cb32
+    environment:
+      - MYSQL_ROOT_PASSWORD=zaphod
+      - MYSQL_DATABASE=test
+      - MYSQL_USER=test
+      - MYSQL_PASSWORD=zaphod
+    binds:
+      - /lzcapp/var/mysql:/var/lib/mysql
+    health_check:
+      test:
+        - CMD
+        - mysqladmin
+        - -h
+        - 127.0.0.1
+        - --user=test
+        - --password=zaphod
+        - -s
+        - ping
+      start_period: 90s
+  redis-server:
+    image: registry.lazycat.cloud/liu/library/redis:46098be4e86fb7f5
+    command: --bind 0.0.0.0 --appendonly yes --requirepass test
+    binds:
+      - /lzcapp/var/redis:/data
+    health_check:
+      test:
+        - CMD
+        - redis-cli
+        - -a
+        - test
+        - ping
+      start_period: 5s
+  trillian-log-server:
+    image: registry.lazycat.cloud/liu/lazycatapps/rekor-trillian-log-server:6036627495bd5e2e
+    command: --quota_system=noop --storage_system=mysql --mysql_uri="test:zaphod@tcp(mysql:3306)/test" --rpc_endpoint=0.0.0.0:8090 --http_endpoint=0.0.0.0:8091 --alsologtostderr
+    depends_on:
+      - mysql
+    health_check:
+      test:
+        - CMD
+        - curl
+        - -f
+        - http://localhost:8091/healthz
+      start_period: 15s
+  trillian-log-signer:
+    image: registry.lazycat.cloud/liu/lazycatapps/rekor-trillian-log-signer:2cde01419d3aebd8
+    command: --quota_system=noop --storage_system=mysql --mysql_uri="test:zaphod@tcp(mysql:3306)/test" --rpc_endpoint=0.0.0.0:8090 --http_endpoint=0.0.0.0:8091 --force_master --alsologtostderr
+    depends_on:
+      - mysql
+    health_check:
+      test:
+        - CMD
+        - curl
+        - -f
+        - http://localhost:8091/healthz
+      start_period: 15s
+  rekor-server:
+    image: registry.lazycat.cloud/liu/lazycatapps/rekor-server:f719094dfaa392e9
+    environment:
+      - TMPDIR=/var/run/attestations
+    command: rekor-server serve --trillian_log_server.address=trillian-log-server --trillian_log_server.port=8090 --rekor_server.address=0.0.0.0 --rekor_server.signer=memory --enable_attestation_storage --attestation_storage_bucket=file:///var/run/attestations --search_index.storage_provider=mysql --search_index.mysql.dsn="test:zaphod@tcp(mysql:3306)/test"
+    depends_on:
+      - mysql
+      - trillian-log-server
+    binds:
+      - /lzcapp/var/attestations:/var/run/attestations
+    health_check:
+      test:
+        - CMD
+        - curl
+        - -f
+        - http://localhost:3000/ping
+      start_period: 30s

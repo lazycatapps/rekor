@@ -50,9 +50,10 @@ services:
       retries: 3
       start_period: 5s
   trillian-log-server:
-    build:
-      context: .
-      dockerfile: Dockerfile.trillian-log-server
+    image: lazycatapps/rekor-trillian-log-server:sha-29836b6
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.trillian-log-server
     command: [
       "--quota_system=noop",
       "--storage_system=mysql",
@@ -75,9 +76,10 @@ services:
       retries: 15
       start_period: 15s
   trillian-log-signer:
-    build:
-      context: .
-      dockerfile: Dockerfile.trillian-log-signer
+    image: lazycatapps/rekor-trillian-log-signer:sha-29836b6
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.trillian-log-signer
     command: [
       "--quota_system=noop",
       "--storage_system=mysql",
@@ -100,9 +102,10 @@ services:
       retries: 15
       start_period: 15s
   rekor-server:
-    build:
-      context: .
-      target: "deploy"
+    image: lazycatapps/rekor-server:sha-29836b6
+    # build:
+    #   context: .
+    #   target: "deploy"
     environment:
       - TMPDIR=/var/run/attestations # workaround for https://github.com/google/go-cloud/issues/3294
     command: [
