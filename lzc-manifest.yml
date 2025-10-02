@@ -100,6 +100,7 @@ application:
 
 services:
   mysql:
+    # lzc-cli appstore copy-image gcr.io/trillian-opensource-ci/db_server:v1.4.0
     image: registry.lazycat.cloud/liu/trillian-opensource-ci/db_server:9a8a4d8f75b4cb32
     environment:
       - MYSQL_ROOT_PASSWORD=zaphod
@@ -120,6 +121,7 @@ services:
         - ping
       start_period: 90s
   redis-server:
+    # lzc-cli appstore copy-image docker.io/redis:6.2
     image: registry.lazycat.cloud/liu/library/redis:46098be4e86fb7f5
     command: --bind 0.0.0.0 --appendonly yes --requirepass test
     binds:
@@ -133,7 +135,8 @@ services:
         - ping
       start_period: 5s
   trillian-log-server:
-    image: registry.lazycat.cloud/liu/lazycatapps/rekor-trillian-log-server:6036627495bd5e2e
+    # lzc-cli appstore copy-image lazycatapps/rekor-trillian-log-server:sha-b67825f
+    image: registry.lazycat.cloud/liu/lazycatapps/rekor-trillian-log-server:ab0aab1de29d1696
     command: --quota_system=noop --storage_system=mysql --mysql_uri="test:zaphod@tcp(mysql:3306)/test" --rpc_endpoint=0.0.0.0:8090 --http_endpoint=0.0.0.0:8091 --alsologtostderr
     depends_on:
       - mysql
@@ -145,7 +148,8 @@ services:
         - http://localhost:8091/healthz
       start_period: 15s
   trillian-log-signer:
-    image: registry.lazycat.cloud/liu/lazycatapps/rekor-trillian-log-signer:2cde01419d3aebd8
+    # lzc-cli appstore copy-image lazycatapps/rekor-trillian-log-signer:sha-b67825f
+    image: registry.lazycat.cloud/liu/lazycatapps/rekor-trillian-log-signer:ce0736bd15c45b19
     command: --quota_system=noop --storage_system=mysql --mysql_uri="test:zaphod@tcp(mysql:3306)/test" --rpc_endpoint=0.0.0.0:8090 --http_endpoint=0.0.0.0:8091 --force_master --alsologtostderr
     depends_on:
       - mysql
@@ -157,7 +161,8 @@ services:
         - http://localhost:8091/healthz
       start_period: 15s
   rekor-server:
-    image: registry.lazycat.cloud/liu/lazycatapps/rekor-server:7a5450d50bacd2bc
+    # lzc-cli appstore copy-image lazycatapps/rekor-server:sha-b67825f
+    image: registry.lazycat.cloud/liu/lazycatapps/rekor-server:c7700eda0450de19
     environment:
       - TMPDIR=/var/run/attestations
       - DEBUG=0 # 启用 entrypoint 脚本调试
