@@ -20,6 +20,8 @@ locales:
 
       本应用提供了完整的 Rekor 服务环境，包括 Trillian 日志服务器、签名服务和搜索索引，支持软件签名的记录、查询和验证。
 
+      **注意**：社区默认配置下，每次重启后之前保存的数据好像会消失。本次适配已解决该问题，通过数据持久化确保应用重启后原数据仍能继续访问。
+
       ## 主要功能
 
       - 📝 记录和验证软件签名
@@ -48,6 +50,8 @@ locales:
       Rekor is Sigstore's signature transparency log service, providing an immutable, tamper-resistant ledger for recording software signatures and other metadata. Rekor makes the software supply chain more transparent and verifiable.
 
       This application provides a complete Rekor service environment, including Trillian log server, signing service, and search index, supporting the recording, querying, and verification of software signatures.
+
+      **Note**: In the default community configuration, previously saved data appears to be lost after each restart. This adaptation has resolved the issue by implementing data persistence to ensure that original data remains accessible after application restarts.
 
       ## Main Features
 
@@ -153,9 +157,10 @@ services:
         - http://localhost:8091/healthz
       start_period: 15s
   rekor-server:
-    image: registry.lazycat.cloud/liu/lazycatapps/rekor-server:f719094dfaa392e9
+    image: registry.lazycat.cloud/liu/lazycatapps/rekor-server:7a5450d50bacd2bc
     environment:
       - TMPDIR=/var/run/attestations
+      - DEBUG=0 # 启用 entrypoint 脚本调试
     command: rekor-server serve --trillian_log_server.address=trillian-log-server --trillian_log_server.port=8090 --rekor_server.address=0.0.0.0 --rekor_server.signer=memory --enable_attestation_storage --attestation_storage_bucket=file:///var/run/attestations --search_index.storage_provider=mysql --search_index.mysql.dsn="test:zaphod@tcp(mysql:3306)/test"
     depends_on:
       - mysql

@@ -33,11 +33,21 @@ RUN go test -c -ldflags "${SERVER_LDFLAGS}" -cover -covermode=count -coverpkg=./
 # Multi-Stage production build
 FROM golang:1.25.0@sha256:5502b0e56fca23feba76dbc5387ba59c593c02ccc2f0f7355871ea9a0852cebe AS deploy
 
+# Install mysql-client for tree ID detection
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    default-mysql-client \
+    && rm -rf /var/lib/apt/lists/*
+
 # Retrieve the binary from the previous stage
 COPY --from=builder /opt/app-root/src/rekor-server /usr/local/bin/rekor-server
 
-# Set the binary as the entrypoint of the container
-CMD ["rekor-server", "serve"]
+# Copy entrypoint wrapper script
+COPY scripts/rekor-entrypoint.sh /usr/local/bin/rekor-entrypoint.sh
+RUN chmod +x /usr/local/bin/rekor-entrypoint.sh
+
+# Set the entrypoint wrapper as the entrypoint
+ENTRYPOINT ["/usr/local/bin/rekor-entrypoint.sh"]
+CMD ["serve"]
 
 # debug compile options & debugger
 FROM deploy AS debug
