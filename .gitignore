@@ -29,4 +29,5 @@ rekor.pub
 *.test
 
 *.lpk
+*.lpk.sh
 .lzc-dtl-cache.json
